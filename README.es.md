@@ -6,15 +6,18 @@
   <a href="README.md">English</a> | <b>Español</b>
 </p>
 
-# OpenTuya Sync
+# Llevá Ambilight a cualquier lámpara inteligente Tuya
 
-Ambilight / luz reactiva en tiempo real para lámparas inteligentes, 100%
-local — sin pasar por la nube para los cambios de color en sí. Arquitectura
-de plugins: varias **fuentes** de color (pantalla, audio, flash, Spotify,
-cámara web) y varias **salidas** (Tuya y sus clones de marca blanca, WLED,
-Hue), combinables libremente. Interfaz Qt con lista de dispositivos y
-control manual de color, se minimiza a la bandeja del sistema en vez de
-cerrarse.
+OpenTuya Sync convierte tus lámparas Tuya / Ledvance en un sistema de luz
+ambiente en tiempo real para Windows.
+
+**100% Local. Sin nube. Código abierto.**
+
+Arquitectura de plugins: varias **fuentes** de color (pantalla, audio,
+flash, Spotify, cámara web) y varias **salidas** (Tuya y sus clones de
+marca blanca, WLED, Hue), combinables libremente. Interfaz Qt con lista de
+dispositivos y control manual de color, se minimiza a la bandeja del
+sistema en vez de cerrarse.
 
 ## Funciones
 

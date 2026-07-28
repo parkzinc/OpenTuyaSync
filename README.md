@@ -6,14 +6,17 @@
   <b>English</b> | <a href="README.es.md">Español</a>
 </p>
 
-# OpenTuya Sync
+# Bring Ambilight to any Tuya Smart Light
 
-Real-time ambilight / reactive light for smart bulbs, 100% local — no cloud
-round-trip for the actual color updates. Plugin architecture: several color
-**sources** (screen, audio, flash, Spotify, webcam) and several **outputs**
-(Tuya and its white-label clones, WLED, Hue), freely combinable. Qt GUI with
-a device list and manual color control, minimizes to the system tray instead
-of closing.
+OpenTuya Sync turns your Tuya / Ledvance smart bulbs into a real-time
+ambient lighting system for Windows.
+
+**100% Local. No Cloud. Open Source.**
+
+Plugin architecture: several color **sources** (screen, audio, flash,
+Spotify, webcam) and several **outputs** (Tuya and its white-label clones,
+WLED, Hue), freely combinable. Qt GUI with a device list and manual color
+control, minimizes to the system tray instead of closing.
 
 ## Features
 
