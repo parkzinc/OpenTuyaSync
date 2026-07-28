@@ -70,16 +70,19 @@ This produces `dist\OpenTuyaSync\OpenTuyaSync.exe` using PyInstaller
 
 | Output | Brands | Status |
 |---|---|---|
-| **Tuya** | Tuya, LSC Smart Connect (Action), Nedis SmartLife, Mirabella Genio, Treatlife | Tested extensively against a real bulb |
+| **Tuya** | Tuya, **Ledvance SMART+ WiFi**, LSC Smart Connect (Action), Nedis SmartLife, Mirabella Genio, Treatlife | Tested extensively against a real bulb — the bulb used for all testing throughout this project is a **Ledvance WiFi bulb** |
 | **WLED** | Any ESP8266/ESP32 running WLED firmware | **Untested** — no hardware available. Implemented against the official JSON API |
 | **Philips Hue** | Bridge + Hue lights | **Untested** — no hardware available. Implemented against the official API |
 
-Nedis, Mirabella, LSC and Treatlife are white-label clones of the same Tuya
-protocol — add them as a "Tuya" device with their own Device ID and Local
-Key.
+Ledvance, Nedis, Mirabella, LSC and Treatlife are white-label clones of the
+same Tuya protocol — add them as a "Tuya" device with their own Device ID
+and Local Key.
 
-Ledvance is out of scope: most of its models use Zigbee with their own
-bridge, a different protocol entirely.
+Careful with the Ledvance name: Ledvance sells two unrelated product
+lines. Their **SMART+ WiFi** bulbs (what this project targets) run the
+Tuya protocol directly over WiFi — no separate hub needed. Their
+**SMART+ Zigbee** line is a different family entirely, needs its own
+Zigbee bridge, and is **not** supported here.
 
 ## The five sources
 
