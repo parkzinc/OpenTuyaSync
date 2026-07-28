@@ -1,0 +1,17 @@
+# secretos / config local del usuario (device IDs, local keys, tokens de Spotify)
+config.json
+
+# builds
+build/
+dist/
+*.spec
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# varios
+*.log
+.DS_Store

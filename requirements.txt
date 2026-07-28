@@ -1,0 +1,9 @@
+PySide6
+mss
+dxcam
+numpy
+tinytuya
+soundcard
+opencv-python
+requests
+Pillow
