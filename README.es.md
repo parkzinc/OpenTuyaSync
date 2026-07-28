@@ -19,6 +19,32 @@ marca blanca, WLED, Hue), combinables libremente. Interfaz Qt con lista de
 dispositivos y control manual de color, se minimiza a la bandeja del
 sistema en vez de cerrarse.
 
+## Demo
+
+<p align="center">
+  <img src="assets/demo.gif" alt="Demo de OpenTuya Sync — el foco reaccionando a la pantalla en tiempo real" width="100%">
+</p>
+
+<!--
+  TODO: grabar ~10-15s de un juego/película con el foco real reaccionando
+  al lado del monitor, convertirlo a GIF, y ponerlo en assets/demo.gif.
+  GitHub renderiza GIFs animados directo en la página del repo — es lo que
+  más impacto genera: mostrar el resultado en los primeros 5 segundos en
+  vez de hacer que la gente lea para enterarse.
+-->
+
+## OpenTuya Sync vs. la app oficial
+
+| | App oficial (Smart Life / Tuya) | OpenTuya Sync |
+|---|---|---|
+| Selección manual de color | ✅ | ✅ |
+| Ambilight (sincroniza con pantalla) | ❌ | ✅ |
+| Sincroniza con música | ❌ | ✅ |
+| Luz ambiente por cámara web | ❌ | ✅ |
+| Funciona sin cuenta en la nube | ❌ | ✅ |
+| Requiere cuenta en la nube de Tuya | ✅ | ❌ |
+| Código abierto | ❌ | ✅ |
+
 ## Funciones
 
 - **Ambilight** — sigue el color de la pantalla en tiempo real (`dxcam`,

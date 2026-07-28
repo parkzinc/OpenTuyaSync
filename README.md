@@ -18,6 +18,32 @@ Spotify, webcam) and several **outputs** (Tuya and its white-label clones,
 WLED, Hue), freely combinable. Qt GUI with a device list and manual color
 control, minimizes to the system tray instead of closing.
 
+## Demo
+
+<p align="center">
+  <img src="assets/demo.gif" alt="OpenTuya Sync demo — the bulb reacting to the screen in real time" width="100%">
+</p>
+
+<!--
+  TODO: record ~10-15s of a game/movie playing with the real bulb reacting
+  next to the monitor, convert to GIF, drop it at assets/demo.gif. GitHub
+  renders animated GIFs inline on the repo page — this is the single
+  highest-impact thing you can add: show the result in the first 5
+  seconds instead of making people read for it.
+-->
+
+## OpenTuya Sync vs. the official app
+
+| | Official app (Smart Life / Tuya) | OpenTuya Sync |
+|---|---|---|
+| Manual color selection | ✅ | ✅ |
+| Ambilight (screen sync) | ❌ | ✅ |
+| Music sync | ❌ | ✅ |
+| Webcam ambient | ❌ | ✅ |
+| Works with no cloud account | ❌ | ✅ |
+| Requires Tuya cloud account | ✅ | ❌ |
+| Open source | ❌ | ✅ |
+
 ## Features
 
 - **Ambilight** — follows your screen color in real time (`dxcam`, works
