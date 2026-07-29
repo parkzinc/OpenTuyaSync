@@ -28,19 +28,26 @@ DEFAULT_CONFIG = {
             'monitor': 1, 'interval_ms': 150, 'sample_step': 14, 'smoothing': 0.65,
             'min_change': 12, 'saturation_boost': 2.4, 'saturation_floor': 0.35,
             'value_floor': 0.15, 'black_cutoff': 0.04,
+            'brightness_limit_min': 0, 'brightness_limit_max': 100,
         },
         'music': {
             'beat_factor': 1.5, 'beat_cooldown': 0.12, 'min_brightness': 0.12,
             'send_interval_ms': 120,
+            'brightness_limit_min': 0, 'brightness_limit_max': 100,
         },
-        'flash': {'hz': 2.5, 'colorful': True},
+        'flash': {
+            'hz': 2.5, 'colorful': True,
+            'brightness_limit_min': 0, 'brightness_limit_max': 100,
+        },
         'spotify': {
             'client_id': '', 'client_secret': '', 'refresh_token': '',
             'poll_interval_s': 2.5,
+            'brightness_limit_min': 0, 'brightness_limit_max': 100,
         },
         'webcam': {
             'device_index': 1, 'sample_step': 8, 'interval_ms': 200,
             'saturation_boost': 1.3, 'value_floor': 0.05,
+            'brightness_limit_min': 0, 'brightness_limit_max': 100,
         },
     },
     'restore_scene_on_exit': True,

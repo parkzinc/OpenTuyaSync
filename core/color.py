@@ -43,6 +43,21 @@ def enhance(r, g, b, sat_boost=1.0, sat_floor=0.0, value_floor=0.0, black_cutoff
     return colorsys.hsv_to_rgb(h, s, v)
 
 
+def clamp_brightness(r, g, b, min_v=0.0, max_v=1.0):
+    """
+    Limita el brillo (V de HSV) de un color a [min_v, max_v] sin tocar el
+    matiz ni la saturacion. Pensado para modos automaticos: si algo en
+    pantalla/audio dispara un pico de brillo (un flashbang, por ejemplo),
+    esto lo recorta antes de mandarlo al foco; si el minimo esta muy bajo,
+    lo levanta.
+    """
+    if min_v <= 0.0 and max_v >= 1.0:
+        return r, g, b
+    h, s, v = colorsys.rgb_to_hsv(r, g, b)
+    v = max(min_v, min(max_v, v))
+    return colorsys.hsv_to_rgb(h, s, v)
+
+
 class AutoGain:
     """
     Convierte un nivel crudo (RMS de audio, brillo de imagen, lo que sea) a

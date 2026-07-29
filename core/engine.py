@@ -13,6 +13,8 @@ mandarselo a cada dispositivo.
 import threading
 import time
 
+from core.color import clamp_brightness
+
 
 class Engine:
     def __init__(self, send_interval_ms=150, on_state_change=None):
@@ -26,15 +28,25 @@ class Engine:
         self._stop = threading.Event()
         self.active_source_name = None
 
-    def start(self, source, outputs):
+        # 0-1 -- se leen en cada frame de _run(), asi que se pueden pisar
+        # en caliente desde la GUI (set_brightness_limits) sin reiniciar
+        # la fuente. Pensado para bajar el brillo maximo al vuelo si algo
+        # (un flashbang en un juego, por ejemplo) pega muy fuerte.
+        self.min_v = 0.0
+        self.max_v = 1.0
+
+    def start(self, source, outputs, min_brightness=0, max_brightness=100):
         """source: una CaptureSource ya instanciada (sin arrancar).
-        outputs: lista de OutputTarget ya conectados."""
+        outputs: lista de OutputTarget ya conectados.
+        min_brightness/max_brightness: 0-100, limite de V (HSV) aplicado a
+        cada color antes de mandarlo."""
         if self._thread and self._thread.is_alive():
             self.stop()
 
         self.source = source
         self.outputs = outputs
         self.active_source_name = source.name
+        self.set_brightness_limits(min_brightness, max_brightness)
 
         for out in self.outputs:
             out.save_previous_state()
@@ -46,12 +58,16 @@ class Engine:
         self._thread.start()
         self._notify()
 
+    def set_brightness_limits(self, min_brightness, max_brightness):
+        self.min_v = min_brightness / 100
+        self.max_v = max_brightness / 100
+
     def _run(self):
         while not self._stop.is_set():
             t0 = time.time()
             color = self.source.get_color()
             if color is not None:
-                r, g, b = color
+                r, g, b = clamp_brightness(*color, self.min_v, self.max_v)
                 for out in self.outputs:
                     out.set_color(r, g, b)
             elapsed = time.time() - t0

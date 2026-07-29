@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QButtonGroup, QFrame, QGroupBox, QHBoxLayout, QLabel, QListWidget,
     QListWidgetItem, QMainWindow, QMessageBox, QPushButton, QRadioButton,
-    QTabWidget, QVBoxLayout, QWidget,
+    QSlider, QTabWidget, QVBoxLayout, QWidget,
 )
 
 from capture.registry import create_source
@@ -103,8 +103,8 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(w)
         layout.addWidget(self._heading('Fuente'))
 
-        source_box = QGroupBox()
-        source_layout = QVBoxLayout(source_box)
+        self.source_box = QGroupBox()
+        source_layout = QVBoxLayout(self.source_box)
         self.source_group = QButtonGroup(self)
         self.source_radios = {}
         for name, label in SOURCE_LABELS.items():
@@ -113,7 +113,24 @@ class MainWindow(QMainWindow):
             self.source_group.addButton(rb)
             source_layout.addWidget(rb)
         self.source_radios['screen'].setChecked(True)
-        layout.addWidget(source_box)
+        layout.addWidget(self.source_box)
+
+        layout.addWidget(self._heading('Límites de brillo'))
+        limits_box = QGroupBox()
+        limits_layout = QVBoxLayout(limits_box)
+        self.min_slider, self.min_lbl = self._add_limit_slider(limits_layout, 'Mínimo')
+        self.max_slider, self.max_lbl = self._add_limit_slider(limits_layout, 'Máximo')
+        self.max_slider.setValue(100)
+        self.min_slider.valueChanged.connect(self._on_brightness_min_changed)
+        self.max_slider.valueChanged.connect(self._on_brightness_max_changed)
+        layout.addWidget(limits_box)
+        self._load_brightness_limits()
+
+        # conectado aca, despues de que existen los sliders -- si se
+        # conecta durante el loop de arriba, el setChecked(True) inicial
+        # dispara toggled antes de que self.min_slider exista.
+        for rb in self.source_radios.values():
+            rb.toggled.connect(lambda checked: self._load_brightness_limits() if checked else None)
 
         self.start_btn = QPushButton('Iniciar')
         self.start_btn.setProperty('role', 'primary')
@@ -126,6 +143,21 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.status_label)
         layout.addStretch()
         return w
+
+    def _add_limit_slider(self, layout, label):
+        row = QHBoxLayout()
+        lbl = QLabel(label)
+        lbl.setFixedWidth(60)
+        sl = QSlider(Qt.Horizontal)
+        sl.setRange(0, 100)
+        val_lbl = QLabel('')
+        val_lbl.setFixedWidth(38)
+        val_lbl.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        row.addWidget(lbl)
+        row.addWidget(sl)
+        row.addWidget(val_lbl)
+        layout.addLayout(row)
+        return sl, val_lbl
 
     def _build_manual_tab(self):
         self.manual = ManualControl()
@@ -243,7 +275,7 @@ class MainWindow(QMainWindow):
                                  'Tilda al menos un dispositivo de la lista para mandarle color.')
             return
 
-        source_name = next(n for n, rb in self.source_radios.items() if rb.isChecked())
+        source_name = self._current_source_name()
         try:
             src = create_source(source_name, self.cfg)
         except Exception as e:
@@ -251,8 +283,13 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, 'No se pudo iniciar', str(e))
             return
 
+        cap = self.cfg['capture'][source_name]
         try:
-            self.engine.start(src, outs)
+            self.engine.start(
+                src, outs,
+                min_brightness=cap.get('brightness_limit_min', 0),
+                max_brightness=cap.get('brightness_limit_max', 100),
+            )
         except SpotifyNotConfigured:
             # En vez de solo avisar que falta configurar, se ofrece
             # hacerlo ahi mismo -- y si sale bien, reintenta iniciar solo.
@@ -278,6 +315,50 @@ class MainWindow(QMainWindow):
             f'Activo: {SOURCE_LABELS.get(self.engine.active_source_name, "?")}' if running else 'Detenido.'
         )
         self.manual.setEnabled(not running)
+        # no se puede cambiar de fuente mientras corre (habria que reiniciar);
+        # los sliders de brillo si quedan habilitados, para poder bajarle en
+        # caliente al brillo maximo mientras la fuente activa esta corriendo.
+        self.source_box.setEnabled(not running)
+
+    # ------------------------------------------------------- limites de brillo
+
+    def _current_source_name(self):
+        return next(n for n, rb in self.source_radios.items() if rb.isChecked())
+
+    def _load_brightness_limits(self):
+        name = self._current_source_name()
+        cap = self.cfg['capture'][name]
+        lo = cap.get('brightness_limit_min', 0)
+        hi = cap.get('brightness_limit_max', 100)
+        self.min_slider.blockSignals(True)
+        self.max_slider.blockSignals(True)
+        self.min_slider.setValue(lo)
+        self.max_slider.setValue(hi)
+        self.min_lbl.setText(f'{lo}%')
+        self.max_lbl.setText(f'{hi}%')
+        self.min_slider.blockSignals(False)
+        self.max_slider.blockSignals(False)
+
+    def _on_brightness_min_changed(self, value):
+        if value > self.max_slider.value():
+            self.max_slider.setValue(value)   # arrastra el maximo si el minimo lo pasa
+        self.min_lbl.setText(f'{value}%')
+        self._save_brightness_limits()
+
+    def _on_brightness_max_changed(self, value):
+        if value < self.min_slider.value():
+            self.min_slider.setValue(value)   # arrastra el minimo si el maximo baja de el
+        self.max_lbl.setText(f'{value}%')
+        self._save_brightness_limits()
+
+    def _save_brightness_limits(self):
+        name = self._current_source_name()
+        cap = self.cfg['capture'][name]
+        cap['brightness_limit_min'] = self.min_slider.value()
+        cap['brightness_limit_max'] = self.max_slider.value()
+        cfgmod.save(self.cfg)
+        if self.engine.running and self.engine.active_source_name == name:
+            self.engine.set_brightness_limits(cap['brightness_limit_min'], cap['brightness_limit_max'])
 
     # ------------------------------------------------------------ modo manual
 
