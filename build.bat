@@ -8,6 +8,8 @@ python -m PyInstaller --noconfirm ^
   --add-data "assets;assets" ^
   --collect-all dxcam ^
   --collect-all soundcard ^
+  --collect-all bleak ^
+  --collect-all winrt ^
   main.py
 echo.
 echo Listo. El ejecutable esta en dist\OpenTuyaSync\OpenTuyaSync.exe

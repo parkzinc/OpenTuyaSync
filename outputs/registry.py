@@ -4,6 +4,7 @@ agregar una linea aca (y el archivo output_*.py correspondiente) -- nada
 mas del programa necesita saber que existe.
 """
 
+from outputs.elk_bledob_output import ElkBledobOutput
 from outputs.hue_output import HueOutput
 from outputs.tuya_output import TuyaOutput
 from outputs.wled_output import WledOutput
@@ -12,6 +13,7 @@ OUTPUT_TYPES = {
     TuyaOutput.name: TuyaOutput,
     WledOutput.name: WledOutput,
     HueOutput.name: HueOutput,
+    ElkBledobOutput.name: ElkBledobOutput,
 }
 
 

@@ -62,6 +62,12 @@ control, minimizes to the system tray instead of closing.
 - **Network scan** — auto-fills Device ID / IP / protocol version for Tuya
   devices found on your LAN (the Local Key itself can't be recovered this
   way — see [Adding a device](#adding-a-device)).
+- **Per-source brightness limits** — set a floor and ceiling on how dim or
+  bright each automatic mode can go, editable live while it's running (so
+  you can knock down a screen-brightness spike — a flashbang in a game,
+  say — without stopping ambilight).
+- **Bluetooth output** — supports ELK-BLEDOB/LotusLamp X-protocol light
+  bars/strips (NBBUFF, Ledagic, similar clones) alongside the WiFi outputs.
 - System tray, dark cyberpunk UI, standalone `.exe` build.
 
 ## Install & run from source
@@ -99,6 +105,7 @@ This produces `dist\OpenTuyaSync\OpenTuyaSync.exe` using PyInstaller
 | **Tuya** | Tuya, **Ledvance SMART+ WiFi**, LSC Smart Connect (Action), Nedis SmartLife, Mirabella Genio, Treatlife | Tested extensively against a real bulb — the bulb used for all testing throughout this project is a **Ledvance WiFi bulb** |
 | **WLED** | Any ESP8266/ESP32 running WLED firmware | **Untested** — no hardware available. Implemented against the official JSON API |
 | **Philips Hue** | Bridge + Hue lights | **Untested** — no hardware available. Implemented against the official API |
+| **ELK-BLEDOB (Bluetooth)** | Generic "LotusLamp X"-app light bars/strips sold under names like NBBUFF, Ledagic, and similar Amazon/AliExpress clones | **Untested** — no hardware available. Unlike the others, there's no official API for this one: it's built from a protocol reverse-engineered by a third party ([8none1/elk-bledob](https://github.com/8none1/elk-bledob)), not vendor documentation. Bluetooth LE, not WiFi — connects by MAC address, has a scan button in "Add device" |
 
 Ledvance, Nedis, Mirabella, LSC and Treatlife are white-label clones of the
 same Tuya protocol — add them as a "Tuya" device with their own Device ID
@@ -149,6 +156,11 @@ but you shouldn't need it.)
 - **WLED**: just the IP.
 - **Hue**: Bridge IP, press the physical button on the Bridge, then hit
   **Emparejar** within 30 seconds, then pick the light ID.
+- **ELK-BLEDOB (Bluetooth)**: click **🔍 Buscar por Bluetooth** to list
+  nearby BLE devices that broadcast a name, or type the MAC address by
+  hand if you already know it (e.g. from the nRF Connect app). The scan
+  shows every nearby named BLE device, not just this brand — clones vary
+  in what name they advertise.
 
 Checked devices in the list are the ones that receive color when a source
 is running. You can have several devices, from different brands, active at
@@ -171,9 +183,10 @@ capture/
   webcam_capture.py    webcam
 
 outputs/
-  tuya_output.py    Tuya + white-label clones
-  wled_output.py    WLED
-  hue_output.py     Philips Hue
+  tuya_output.py        Tuya + white-label clones
+  wled_output.py        WLED
+  hue_output.py         Philips Hue
+  elk_bledob_output.py  ELK-BLEDOB / LotusLamp X (Bluetooth)
 ```
 
 Adding a new source or output is one new file plus one line in the
@@ -200,6 +213,18 @@ Honest, not marketing:
 - **WLED and Hue**: **untested**, no hardware available. Implemented
   against each vendor's official, stable public docs, which isn't the same
   as confirming it works. Let us know if something's off.
+- **ELK-BLEDOB (Bluetooth)**: **untested**, no hardware available — and
+  higher uncertainty than WLED/Hue, since there's no official docs to
+  implement against at all, just a third party's reverse-engineered
+  protocol. `bleak` itself (the BLE library) was confirmed working on
+  Windows — scanning correctly reports "Bluetooth radio is not powered
+  on" when Bluetooth is off — but no actual device has confirmed the byte
+  protocol works. Your specific clone may use a different characteristic
+  UUID or byte layout. Report back either way.
+- **Per-source brightness limits**: the min/max sliders, per-source
+  persistence, live updates while a source is running, and the HSV
+  clamping math are all covered by direct tests. Not yet verified against
+  a real bulb reacting to an actual in-game flash.
 - **GUI and `.exe`**: the window renders, loads devices from
   `config.json`, and the full flow (pick source → Iniciar → the bulb
   changes → Detener → reverts on its own) was verified end to end, and

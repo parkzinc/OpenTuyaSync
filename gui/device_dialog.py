@@ -31,6 +31,18 @@ class _ScanThread(QThread):
             self.failed.emit(str(e))
 
 
+class _BleScanThread(QThread):
+    finished_scan = Signal(list)
+    failed = Signal(str)
+
+    def run(self):
+        try:
+            from outputs.elk_bledob_output import scan
+            self.finished_scan.emit(scan())
+        except Exception as e:
+            self.failed.emit(str(e))
+
+
 class DeviceDialog(QDialog):
     def __init__(self, parent=None, device=None):
         super().__init__(parent)
@@ -41,6 +53,8 @@ class DeviceDialog(QDialog):
         }
         self._scan_thread = None
         self._found_devices = []
+        self._ble_scan_thread = None
+        self._found_ble_devices = []
 
         self.name_edit = QLineEdit(self.device.get('name', ''))
 
@@ -48,6 +62,7 @@ class DeviceDialog(QDialog):
         self.type_combo.addItem('Tuya / Smart Life (LSC, Nedis, Mirabella, Treatlife...)', 'tuya')
         self.type_combo.addItem('WLED', 'wled')
         self.type_combo.addItem('Philips Hue', 'hue')
+        self.type_combo.addItem('ELK-BLEDOB / LotusLamp X (NBBUFF, Ledagic... -- Bluetooth)', 'elk_bledob')
         idx = self.type_combo.findData(self.device.get('type', 'tuya'))
         if idx >= 0:
             self.type_combo.setCurrentIndex(idx)
@@ -55,11 +70,13 @@ class DeviceDialog(QDialog):
         self.tuya_page = self._build_tuya_page()
         self.wled_page = self._build_wled_page()
         self.hue_page = self._build_hue_page()
+        self.ble_page = self._build_ble_page()
 
         self.stack = QStackedWidget()
         self.stack.addWidget(self.tuya_page)
         self.stack.addWidget(self.wled_page)
         self.stack.addWidget(self.hue_page)
+        self.stack.addWidget(self.ble_page)
         self.type_combo.currentIndexChanged.connect(self._on_type_changed)
 
         form = QFormLayout()
@@ -182,6 +199,64 @@ class DeviceDialog(QDialog):
         f.addRow(self._hint('NO PROBADO contra hardware real todavia.'))
         return w
 
+    def _build_ble_page(self):
+        w = QWidget()
+        f = QFormLayout(w)
+
+        self.ble_scan_btn = QPushButton('🔍 Buscar por Bluetooth')
+        self.ble_scan_btn.clicked.connect(self._start_ble_scan)
+        self.ble_scan_status = QLabel('')
+        self.ble_scan_status.setWordWrap(True)
+        self.ble_scan_results = QComboBox()
+        self.ble_scan_results.setVisible(False)
+        self.ble_scan_results.currentIndexChanged.connect(self._apply_ble_scan_selection)
+        f.addRow(self.ble_scan_btn)
+        f.addRow(self.ble_scan_status)
+        f.addRow('Encontrados:', self.ble_scan_results)
+
+        e = self.device.get('elk_bledob', {})
+        self.ble_mac = QLineEdit(e.get('mac', ''))
+        self.ble_mac.setPlaceholderText('BE:32:XX:XX:XX:XX')
+        f.addRow('Direccion MAC:', self.ble_mac)
+        f.addRow(self._hint(
+            'El escaneo muestra TODOS los dispositivos Bluetooth cercanos que se '
+            'anuncian con nombre, no solo estos -- no todos los clones usan el '
+            'mismo nombre. Elegi el que reconozcas, o escribi la MAC a mano si ya '
+            'la sabes (por ejemplo, con la app nRF Connect). '
+            'NO PROBADO contra hardware real: protocolo reverseado por un '
+            'tercero, no documentacion oficial del fabricante.'
+        ))
+        return w
+
+    def _start_ble_scan(self):
+        self.ble_scan_btn.setEnabled(False)
+        self.ble_scan_status.setText('Buscando por Bluetooth... (unos 8 segundos)')
+        self.ble_scan_results.setVisible(False)
+        self._ble_scan_thread = _BleScanThread()
+        self._ble_scan_thread.finished_scan.connect(self._on_ble_scan_done)
+        self._ble_scan_thread.failed.connect(self._on_ble_scan_failed)
+        self._ble_scan_thread.start()
+
+    def _on_ble_scan_done(self, devices):
+        self.ble_scan_btn.setEnabled(True)
+        self._found_ble_devices = devices
+        if not devices:
+            self.ble_scan_status.setText('No se encontro ningun dispositivo Bluetooth con nombre cerca.')
+            return
+        self.ble_scan_status.setText(f'{len(devices)} encontrado(s). Elegi el tuyo:')
+        self.ble_scan_results.clear()
+        for d in devices:
+            self.ble_scan_results.addItem(f"{d['name']}  ·  {d['address']}")
+        self.ble_scan_results.setVisible(True)
+
+    def _on_ble_scan_failed(self, msg):
+        self.ble_scan_btn.setEnabled(True)
+        self.ble_scan_status.setText(f'No se pudo escanear: {msg}')
+
+    def _apply_ble_scan_selection(self, idx):
+        if 0 <= idx < len(self._found_ble_devices):
+            self.ble_mac.setText(self._found_ble_devices[idx]['address'])
+
     def _pair_hue(self):
         ip = self.hue_bridge.text().strip()
         if not ip:
@@ -195,7 +270,10 @@ class DeviceDialog(QDialog):
             QMessageBox.critical(self, 'No se pudo emparejar', str(e))
 
     def _on_type_changed(self):
-        page = {'tuya': self.tuya_page, 'wled': self.wled_page, 'hue': self.hue_page}[self.type_combo.currentData()]
+        page = {
+            'tuya': self.tuya_page, 'wled': self.wled_page,
+            'hue': self.hue_page, 'elk_bledob': self.ble_page,
+        }[self.type_combo.currentData()]
         self.stack.setCurrentWidget(page)
 
     def _on_save(self):
@@ -233,6 +311,11 @@ class DeviceDialog(QDialog):
                 'username': self.hue_username.text().strip(),
                 'light_id': self.hue_light.text().strip(),
             }
+        elif t == 'elk_bledob':
+            if not self.ble_mac.text().strip():
+                QMessageBox.warning(self, 'Falta la MAC', 'La direccion MAC es obligatoria.')
+                return
+            self.device['elk_bledob'] = {'mac': self.ble_mac.text().strip()}
 
         self.accept()
 
@@ -240,4 +323,7 @@ class DeviceDialog(QDialog):
         if self._scan_thread and self._scan_thread.isRunning():
             self._scan_thread.terminate()
             self._scan_thread.wait(1000)
+        if self._ble_scan_thread and self._ble_scan_thread.isRunning():
+            self._ble_scan_thread.terminate()
+            self._ble_scan_thread.wait(1000)
         super().closeEvent(event)

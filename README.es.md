@@ -64,6 +64,14 @@ sistema en vez de cerrarse.
 - **Escaneo de red** — completa Device ID / IP / versión de protocolo
   automáticamente para dispositivos Tuya encontrados en tu red (la Clave
   Local no se puede recuperar así — ver [Agregar un dispositivo](#agregar-un-dispositivo)).
+- **Límites de brillo por fuente** — poné un piso y un techo a qué tan
+  tenue o fuerte puede llegar cada modo automático, editable en caliente
+  mientras está corriendo (así podés bajarle a un pico de brillo en
+  pantalla — un flashbang en un juego, por ejemplo — sin frenar el
+  ambilight).
+- **Salida Bluetooth** — soporta barras/tiras LED con protocolo
+  ELK-BLEDOB/LotusLamp X (NBBUFF, Ledagic, clones parecidos) además de las
+  salidas por WiFi.
 - Bandeja del sistema, interfaz cyberpunk oscura, `.exe` standalone.
 
 ## Instalar y correr desde código
@@ -102,6 +110,7 @@ Esto genera `dist\OpenTuyaSync\OpenTuyaSync.exe` con PyInstaller (modo
 | **Tuya** | Tuya, **Ledvance SMART+ WiFi**, LSC Smart Connect (Action), Nedis SmartLife, Mirabella Genio, Treatlife | Probado extensivamente contra un foco real — el foco usado en todas las pruebas de este proyecto es un **Ledvance WiFi** |
 | **WLED** | Cualquier ESP8266/ESP32 con firmware WLED | **No probado** — no hay hardware disponible. Implementado según la API JSON oficial |
 | **Philips Hue** | Bridge + luces Hue | **No probado** — no hay hardware disponible. Implementado según la API oficial |
+| **ELK-BLEDOB (Bluetooth)** | Barras/tiras LED genéricas con la app "LotusLamp X", vendidas bajo nombres como NBBUFF, Ledagic, y clones parecidos de Amazon/AliExpress | **No probado** — no hay hardware disponible. A diferencia de las demás, acá no hay API oficial: sale de un protocolo reverseado por un tercero ([8none1/elk-bledob](https://github.com/8none1/elk-bledob)), no de documentación del fabricante. Bluetooth LE, no WiFi — se conecta por dirección MAC, tiene botón de escaneo en "Agregar dispositivo" |
 
 Ledvance, Nedis, Mirabella, LSC y Treatlife son marcas blancas del mismo
 protocolo Tuya — se agregan como dispositivo tipo "Tuya", con su propio
@@ -154,6 +163,11 @@ Botón "+ Agregar" en la ventana principal.
 - **WLED**: sólo la IP.
 - **Hue**: IP del Bridge, apretás el botón físico del Bridge y le das a
   **Emparejar** dentro de los 30 segundos, después elegís el ID de la luz.
+- **ELK-BLEDOB (Bluetooth)**: apretá **🔍 Buscar por Bluetooth** para
+  listar dispositivos BLE cercanos que se anuncien con nombre, o escribí
+  la dirección MAC a mano si ya la sabés (por ejemplo, con la app nRF
+  Connect). El escaneo muestra cualquier dispositivo BLE con nombre
+  cerca, no solo esta marca — los clones varían en qué nombre anuncian.
 
 Los dispositivos con el check tildado en la lista son los que reciben
 color cuando arrancás una fuente. Podés tener varios dispositivos, de
@@ -176,9 +190,10 @@ capture/
   webcam_capture.py    camara web
 
 outputs/
-  tuya_output.py    Tuya + marcas blancas
-  wled_output.py    WLED
-  hue_output.py     Philips Hue
+  tuya_output.py        Tuya + marcas blancas
+  wled_output.py        WLED
+  hue_output.py         Philips Hue
+  elk_bledob_output.py  ELK-BLEDOB / LotusLamp X (Bluetooth)
 ```
 
 Agregar una fuente o salida nueva es un archivo nuevo + una línea en el
@@ -207,6 +222,20 @@ Honesto, no marketing:
 - **WLED y Hue**: **no probados**, no hay hardware. Implementados según
   la documentación oficial de cada uno, pública y estable, pero eso no es
   lo mismo que confirmarlo funcionando. Avisen si algo no anda.
+- **ELK-BLEDOB (Bluetooth)**: **no probado**, no hay hardware — y con más
+  incertidumbre que WLED/Hue, porque acá no hay documentación oficial
+  contra la cual implementar, solo el protocolo reverseado por un
+  tercero. `bleak` (la librería BLE) sí se confirmó funcionando en
+  Windows — el escaneo reporta correctamente "Bluetooth radio is not
+  powered on" cuando el Bluetooth está apagado — pero ningún dispositivo
+  real confirmó todavía que el protocolo de bytes funcione. Tu clon
+  puntual puede usar otro UUID de característica u otro orden de bytes.
+  Avisá cómo te fue, para bien o para mal.
+- **Límites de brillo por fuente**: los sliders de mínimo/máximo, que
+  cada fuente recuerde el suyo, la actualización en caliente mientras
+  corre, y la matemática del recorte en HSV, están todos cubiertos por
+  pruebas directas. Todavía no verificado contra un foco real
+  reaccionando a un flash real de un juego.
 - **La GUI y el .exe**: la ventana renderiza, carga los dispositivos de
   `config.json`, y el flujo completo (elegir fuente → Iniciar → la
   lámpara cambia → Detener → vuelve sola a como estaba) se verificó de
