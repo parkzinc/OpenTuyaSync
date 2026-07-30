@@ -1,5 +1,6 @@
 # secretos / config local del usuario (device IDs, local keys, tokens de Spotify)
 config.json
+config.json.bak
 
 # builds
 build/
