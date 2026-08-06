@@ -7,6 +7,11 @@ Todas se emparejan con la app Smart Life / Tuya y usan el mismo Device ID
 Probado extensivamente contra un foco real (ver el proyecto anterior en
 Desktop/ambilight): encendido/apagado, color, brillo, temperatura de
 blanco, y el modo "escena" (ciclo de colores propio del dispositivo).
+
+Blancos/grises puros se mandan por dp de modo "white" en vez de "colour"
+(ver WHITE_SATURATION_THRESHOLD y set_color()) -- esto NO esta probado
+contra hardware real todavia, sale de un reporte de que el brillo maximo
+en blanco se veia mas debil con ambilight que con la app oficial.
 """
 
 import colorsys
@@ -19,6 +24,11 @@ from core.plugin_base import OutputTarget
 def rgb_to_tuya_hex(r, g, b):
     h, s, v = colorsys.rgb_to_hsv(r, g, b)
     return '%04x%04x%04x' % (round(h * 360) % 360, round(s * 1000), round(v * 1000))
+
+
+# Por debajo de esta saturacion, un color se manda como blanco/gris puro
+# en vez de HSV saturado -- ver el comentario en set_color().
+WHITE_SATURATION_THRESHOLD = 0.03
 
 
 class TuyaOutput(OutputTarget):
@@ -47,9 +57,23 @@ class TuyaOutput(OutputTarget):
     def set_color(self, r, g, b):
         if not self.d:
             return
-        hexv = rgb_to_tuya_hex(r, g, b)
+        h, s, v = colorsys.rgb_to_hsv(r, g, b)
         try:
-            self.d.set_multiple_values({'21': 'colour', '24': hexv}, nowait=True)
+            if s < WHITE_SATURATION_THRESHOLD:
+                # Blanco/gris puro (por ejemplo, una pantalla toda blanca
+                # o un flash). El modo "colour" prende los LEDs RGB por
+                # separado, que en la gran mayoria de focos Tuya no llegan
+                # a tanto brillo como el LED blanco dedicado del modo
+                # "white" -- por eso se ve mas fuerte en la app oficial
+                # (que usa "white" para blancos) que con ambilight (que
+                # antes usaba "colour" para todo, blancos incluidos).
+                # dp22 (bright_value) sigue la misma escala 0-1000 que ya
+                # se usa para el V de "colour" en este mismo dispositivo.
+                bright = max(10, round(v * 1000))
+                self.d.set_multiple_values({'21': 'white', '22': bright}, nowait=True)
+            else:
+                hexv = rgb_to_tuya_hex(r, g, b)
+                self.d.set_multiple_values({'21': 'colour', '24': hexv}, nowait=True)
         except Exception:
             # Un envio puntual que falla no es motivo de panico -- se
             # reintenta reconectando en el proximo intervalo.
